@@ -1,6 +1,7 @@
 import discord
 import os
 import datetime
+import asyncio
 
 from discord.ext.commands import Bot, when_mentioned_or
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -11,6 +12,7 @@ from utils import tasks
 from constants import AUTO_UPDATE_TIME
 
 intents = discord.Intents.default()
+intents.message_content = True
 intents.members = False
 client = Bot(case_insensitive=True, description="Lockout Bot", command_prefix=when_mentioned_or("."), intents=intents)
 
@@ -79,15 +81,16 @@ async def on_command_error(ctx: discord.ext.commands.Context, error: Exception):
         desc += f"**{str(error)}**"
         await logging_channel.send(desc)
 
-
-if __name__ == "__main__":
+async def main():
     for filename in os.listdir('./cogs'):
         if filename.endswith('.py'):
             try:
-                client.load_extension(f'cogs.{filename[:-3]}')
+                await client.load_extension(f'cogs.{filename[:-3]}')
             except Exception as e:
                 print(f'Failed to load file {filename}: {str(e)}')
                 print(str(e))
-
     token = os.environ.get('LOCKOUT_BOT_TOKEN')
-    client.run(token)
+    await client.start(token)
+
+if __name__ == "__main__":
+    asyncio.run(main())

@@ -1,0 +1,20 @@
+version: '3'
+services:
+  db:
+    image: postgres:latest
+    restart: always
+    container_name: postgresql
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=lockout
+    ports:
+      - '5432:5432'
+    volumes: 
+      - db:/var/lib/postgresql/data
+networks:
+  default:
+    name: lockout
+volumes:
+  db:
+    driver: local
