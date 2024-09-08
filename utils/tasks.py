@@ -9,7 +9,15 @@ from operator import itemgetter
 
 from data import dbconn
 from constants import BACKUP_DIR
-from utils import updation, discord_, elo, cf_api, scraper, tournament_helper, challonge_api
+from utils import (
+    updation,
+    discord_,
+    elo,
+    cf_api,
+    scraper,
+    tournament_helper,
+    challonge_api,
+)
 
 
 db = dbconn.DbConn()
@@ -25,34 +33,55 @@ async def update_matches(client):
             guild = client.get_guild(match.guild)
             resp = await updation.update_match(match)
             if not resp[0]:
-                logging_channel = await client.fetch_channel(os.environ.get("LOGGING_CHANNEL"))
+                logging_channel = await client.fetch_channel(
+                    os.environ.get("LOGGING_CHANNEL")
+                )
                 await logging_channel.send(f"Error while updating matches: {resp[1]}")
                 continue
             resp = resp[1]
             channel = client.get_channel(match.channel)
             if resp[1] or len(resp[0]) > 0:
-                mem1, mem2 = await discord_.fetch_member(guild, match.p1_id), \
-                             await discord_.fetch_member(guild, match.p2_id)
+                mem1, mem2 = (
+                    await discord_.fetch_member(guild, match.p1_id),
+                    await discord_.fetch_member(guild, match.p2_id),
+                )
                 await channel.send(
-                    f"{mem1.mention} {mem2.mention}, there is an update in standings!")
+                    f"{mem1.mention} {mem2.mention}, there is an update in standings!"
+                )
 
             for x in resp[0]:
-                await channel.send(embed=discord.Embed(
-                    description=f"{' '.join([(await discord_.fetch_member(guild, m)).mention for m in x[1]])} has solved problem worth {x[0] * 100} points",
-                    color=discord.Color.blue()))
+                await channel.send(
+                    embed=discord.Embed(
+                        description=f"{' '.join([(await discord_.fetch_member(guild, m)).mention for m in x[1]])} has solved problem worth {x[0] * 100} points",
+                        color=discord.Color.blue(),
+                    )
+                )
 
             if not resp[1] and len(resp[0]) > 0:
                 await channel.send(
-                    embed=discord_.match_problems_embed(db.get_match_info(guild.id, match.p1_id)))
+                    embed=discord_.match_problems_embed(
+                        db.get_match_info(guild.id, match.p1_id)
+                    )
+                )
 
             if resp[1]:
                 a, b = updation.match_score(resp[2])
                 p1_rank, p2_rank = 1 if a >= b else 2, 1 if b >= a else 2
                 ranklist = []
-                ranklist.append([await discord_.fetch_member(guild, match.p1_id), p1_rank,
-                                 db.get_match_rating(guild.id, match.p1_id)[-1]])
-                ranklist.append([await discord_.fetch_member(guild, match.p2_id), p2_rank,
-                                 db.get_match_rating(guild.id, match.p2_id)[-1]])
+                ranklist.append(
+                    [
+                        await discord_.fetch_member(guild, match.p1_id),
+                        p1_rank,
+                        db.get_match_rating(guild.id, match.p1_id)[-1],
+                    ]
+                )
+                ranklist.append(
+                    [
+                        await discord_.fetch_member(guild, match.p2_id),
+                        p2_rank,
+                        db.get_match_rating(guild.id, match.p2_id)[-1],
+                    ]
+                )
                 ranklist = sorted(ranklist, key=itemgetter(1))
                 res = elo.calculateChanges(ranklist)
 
@@ -62,7 +91,7 @@ async def update_matches(client):
                 db.add_to_finished(match, resp[2])
 
                 embed = discord.Embed(color=discord.Color.dark_magenta())
-                pos, name, ratingChange = '', '', ''
+                pos, name, ratingChange = "", "", ""
                 for user in ranklist:
                     pos += f"{':first_place:' if user[1] == 1 else ':second_place:'}\n"
                     name += f"{user[0].mention}\n"
@@ -73,8 +102,12 @@ async def update_matches(client):
                 embed.set_author(name=f"Match over! Final standings\nScore: {a}-{b}")
                 await channel.send(embed=embed)
         except Exception as e:
-            logging_channel = await client.fetch_channel(os.environ.get("LOGGING_CHANNEL"))
-            await logging_channel.send(f"Error while updating matches: {str(traceback.format_exc())}")
+            logging_channel = await client.fetch_channel(
+                os.environ.get("LOGGING_CHANNEL")
+            )
+            await logging_channel.send(
+                f"Error while updating matches: {str(traceback.format_exc())}"
+            )
 
 
 async def update_rounds(client):
@@ -87,7 +120,9 @@ async def update_rounds(client):
             guild = client.get_guild(round.guild)
             resp = await updation.update_round(round)
             if not resp[0]:
-                logging_channel = await client.fetch_channel(os.environ.get("LOGGING_CHANNEL"))
+                logging_channel = await client.fetch_channel(
+                    os.environ.get("LOGGING_CHANNEL")
+                )
                 await logging_channel.send(f"Error while updating rounds: {resp[1]}")
                 continue
             resp = resp[1]
@@ -95,13 +130,17 @@ async def update_rounds(client):
 
             if resp[2] or resp[1]:
                 await channel.send(
-                    f"{' '.join([(await discord_.fetch_member(guild, int(m))).mention for m in round.users.split()])} there is an update in standings")
+                    f"{' '.join([(await discord_.fetch_member(guild, int(m))).mention for m in round.users.split()])} there is an update in standings"
+                )
 
             for i in range(len(resp[0])):
                 if len(resp[0][i]):
-                    await channel.send(embed=discord.Embed(
-                        description=f"{' '.join([(await discord_.fetch_member(guild, m)).mention for m in resp[0][i]])} has solved problem worth **{round.points.split()[i]}** points",
-                        color=discord.Color.blue()))
+                    await channel.send(
+                        embed=discord.Embed(
+                            description=f"{' '.join([(await discord_.fetch_member(guild, m)).mention for m in resp[0][i]])} has solved problem worth **{round.points.split()[i]}** points",
+                            color=discord.Color.blue(),
+                        )
+                    )
 
             if not resp[1] and resp[2]:
                 new_info = db.get_round_info(round.guild, round.users)
@@ -109,12 +148,21 @@ async def update_rounds(client):
 
             if resp[1]:
                 round_info = db.get_round_info(round.guild, round.users)
-                ranklist = updation.round_score(list(map(int, round_info.users.split())),
-                                                list(map(int, round_info.status.split())),
-                                                list(map(int, round_info.times.split())))
-                eloChanges = elo.calculateChanges([[(await discord_.fetch_member(guild, user.id)), user.rank,
-                                                    db.get_match_rating(round_info.guild, user.id)[-1]] for user in
-                                                   ranklist])
+                ranklist = updation.round_score(
+                    list(map(int, round_info.users.split())),
+                    list(map(int, round_info.status.split())),
+                    list(map(int, round_info.times.split())),
+                )
+                eloChanges = elo.calculateChanges(
+                    [
+                        [
+                            (await discord_.fetch_member(guild, user.id)),
+                            user.rank,
+                            db.get_match_rating(round_info.guild, user.id)[-1],
+                        ]
+                        for user in ranklist
+                    ]
+                )
 
                 for id in list(map(int, round_info.users.split())):
                     db.add_rating_update(round_info.guild, id, eloChanges[id][0])
@@ -123,7 +171,7 @@ async def update_rounds(client):
                 db.add_to_finished_rounds(round_info)
 
                 embed = discord.Embed(color=discord.Color.dark_magenta())
-                pos, name, ratingChange = '', '', ''
+                pos, name, ratingChange = "", "", ""
                 for user in ranklist:
                     handle = db.get_handle(round_info.guild, user.id)
                     emojis = [":first_place:", ":second_place:", ":third_place:"]
@@ -141,34 +189,79 @@ async def update_rounds(client):
                     if not tournament_info or tournament_info.status != 2:
                         continue
                     if ranklist[1].rank == 1 and tournament_info.type != 2:
-                        await discord_.send_message(channel, "Since the round ended in a draw, you will have to compete again for it to be counted in the tournament")
+                        await discord_.send_message(
+                            channel,
+                            "Since the round ended in a draw, you will have to compete again for it to be counted in the tournament",
+                        )
                     else:
-                        res = await tournament_helper.validate_match(round_info.guild, ranklist[0].id, ranklist[1].id, api, db)
+                        res = await tournament_helper.validate_match(
+                            round_info.guild, ranklist[0].id, ranklist[1].id, api, db
+                        )
                         if not res[0]:
-                            await discord_.send_message(channel, res[1] + "\n\nIf you think this is a mistake, type `.tournament forcewin <handle>` to grant victory to a user")
+                            await discord_.send_message(
+                                channel,
+                                res[1]
+                                + "\n\nIf you think this is a mistake, type `.tournament forcewin <handle>` to grant victory to a user",
+                            )
                         else:
                             draw = True if ranklist[1].rank == 1 else False
-                            scores = f"{ranklist[0].points}-{ranklist[1].points}" if res[1]['player1'] == res[1][ranklist[0].id] else f"{ranklist[1].points}-{ranklist[0].points}"
-                            match_resp = await api.post_match_results(res[1]['tournament_id'], res[1]['match_id'], scores, res[1][ranklist[0].id] if not draw else "tie")
-                            if not match_resp or 'errors' in match_resp:
-                                await discord_.send_message(channel, "Some error occurred while validating tournament match. \n\nType `.tournament forcewin <handle>` to grant victory to a user manually")
-                                if match_resp and 'errors' in match_resp:
-                                    logging_channel = await client.fetch_channel(os.environ.get("LOGGING_CHANNEL"))
-                                    await logging_channel.send(f"Error while validating tournament rounds: {match_resp['errors']}")
+                            scores = (
+                                f"{ranklist[0].points}-{ranklist[1].points}"
+                                if res[1]["player1"] == res[1][ranklist[0].id]
+                                else f"{ranklist[1].points}-{ranklist[0].points}"
+                            )
+                            match_resp = await api.post_match_results(
+                                res[1]["tournament_id"],
+                                res[1]["match_id"],
+                                scores,
+                                res[1][ranklist[0].id] if not draw else "tie",
+                            )
+                            if not match_resp or "errors" in match_resp:
+                                await discord_.send_message(
+                                    channel,
+                                    "Some error occurred while validating tournament match. \n\nType `.tournament forcewin <handle>` to grant victory to a user manually",
+                                )
+                                if match_resp and "errors" in match_resp:
+                                    logging_channel = await client.fetch_channel(
+                                        os.environ.get("LOGGING_CHANNEL")
+                                    )
+                                    await logging_channel.send(
+                                        f"Error while validating tournament rounds: {match_resp['errors']}"
+                                    )
                                 continue
-                            winner_handle = db.get_handle(round_info.guild, ranklist[0].id)
-                            await discord_.send_message(channel, f"{f'Congrats **{winner_handle}** for qualifying to the next round. :tada:' if not draw else 'The round ended in a draw!'}\n\nTo view the list of future tournament rounds, type `.tournament matches`")
-                            if await tournament_helper.validate_tournament_completion(round_info.guild, api, db):
-                                await api.finish_tournament(res[1]['tournament_id'])
+                            winner_handle = db.get_handle(
+                                round_info.guild, ranklist[0].id
+                            )
+                            await discord_.send_message(
+                                channel,
+                                f"{f'Congrats **{winner_handle}** for qualifying to the next round. :tada:' if not draw else 'The round ended in a draw!'}\n\nTo view the list of future tournament rounds, type `.tournament matches`",
+                            )
+                            if await tournament_helper.validate_tournament_completion(
+                                round_info.guild, api, db
+                            ):
+                                await api.finish_tournament(res[1]["tournament_id"])
                                 await asyncio.sleep(3)
-                                winner_handle = await tournament_helper.get_winner(res[1]['tournament_id'], api)
-                                await channel.send(embed=tournament_helper.tournament_over_embed(round_info.guild, winner_handle, db))
-                                db.add_to_finished_tournaments(db.get_tournament_info(round_info.guild), winner_handle)
+                                winner_handle = await tournament_helper.get_winner(
+                                    res[1]["tournament_id"], api
+                                )
+                                await channel.send(
+                                    embed=tournament_helper.tournament_over_embed(
+                                        round_info.guild, winner_handle, db
+                                    )
+                                )
+                                db.add_to_finished_tournaments(
+                                    db.get_tournament_info(round_info.guild),
+                                    winner_handle,
+                                )
                                 db.delete_tournament(round_info.guild)
 
         except Exception as e:
-            logging_channel = await client.fetch_channel(os.environ.get("LOGGING_CHANNEL"))
-            await logging_channel.send(f"Error while updating rounds: {str(traceback.format_exc())}")
+            logging_channel = await client.fetch_channel(
+                os.environ.get("LOGGING_CHANNEL")
+            )
+            await logging_channel.send(
+                f"Error while updating rounds: {str(traceback.format_exc())}"
+            )
 
 
 async def create_backup(client):
@@ -177,12 +270,16 @@ async def create_backup(client):
     try:
         if not os.path.isdir(BACKUP_DIR):
             os.mkdir(BACKUP_DIR)
-        filename = f"lockout_backup_{date.today().strftime('%d_%m_%y')}_{int(time.time())}"
-        command = f"pg_dump --dbname=postgresql://{os.environ.get('DB_USERNAME')}:{os.environ.get('DB_PASSWORD')}@127.0.0.1:5432/{os.environ.get('DB_NAME')} > {BACKUP_DIR+filename}.bak"
+        filename = (
+            f"lockout_backup_{date.today().strftime('%d_%m_%y')}_{int(time.time())}"
+        )
+        command = f"pg_dump --dbname=postgresql://{os.environ.get('DB_USERNAME')}:{os.environ.get('DB_PASSWORD')}@database:5432/{os.environ.get('DB_NAME')} > {BACKUP_DIR+filename}.bak"
         os.system(command)
         await logging_channel.send("Backup taken successfully")
     except Exception as e:
-        await logging_channel.send(f"Failed to take backup: {str(traceback.format_exc())}")
+        await logging_channel.send(
+            f"Failed to take backup: {str(traceback.format_exc())}"
+        )
 
 
 async def update_ratings(client):
@@ -209,19 +306,35 @@ async def update_ratings(client):
         segments.append(curr)
 
         for segment in segments:
-            data = await cf.get_user_info({'handles': ';'.join(segment)})
+            data = await cf.get_user_info({"handles": ";".join(segment)})
             for user in data:
-                db.update_cf_rating(user['handle'], user['rating'] if 'rating' in user else 0)
+                db.update_cf_rating(
+                    user["handle"], user["rating"] if "rating" in user else 0
+                )
 
         await logging_channel.send("Ratings updated successfully")
     except Exception as e:
-        await logging_channel.send(f"Error while updating ratings: {str(traceback.format_exc())}")
+        await logging_channel.send(
+            f"Error while updating ratings: {str(traceback.format_exc())}"
+        )
 
 
 def isNonStandard(contest_name):
     names = [
-        'wild', 'fools', 'unrated', 'surprise', 'unknown', 'friday', 'q#', 'testing',
-        'marathon', 'kotlin', 'onsite', 'experimental', 'abbyy']
+        "wild",
+        "fools",
+        "unrated",
+        "surprise",
+        "unknown",
+        "friday",
+        "q#",
+        "testing",
+        "marathon",
+        "kotlin",
+        "onsite",
+        "experimental",
+        "abbyy",
+    ]
     for x in names:
         if x in contest_name.lower():
             return True
@@ -243,18 +356,37 @@ async def update_problemset(client):
 
     try:
         for contest in contest_list:
-            mapping[contest['id']] = contest['name']
-            if contest['id'] not in contest_id and contest['phase'] == "FINISHED" and not isNonStandard(contest['name']):
+            mapping[contest["id"]] = contest["name"]
+            if (
+                contest["id"] not in contest_id
+                and contest["phase"] == "FINISHED"
+                and not isNonStandard(contest["name"])
+            ):
                 con_cnt += 1
-                db.add_contest(contest['id'], contest['name'])
+                db.add_contest(contest["id"], contest["name"])
 
         for problem in problem_list:
-            if problem['contestId'] in mapping and not isNonStandard(mapping[problem['contestId']]) and 'rating' in problem and problem['contestId'] not in problem_id:
+            if (
+                problem["contestId"] in mapping
+                and not isNonStandard(mapping[problem["contestId"]])
+                and "rating" in problem
+                and problem["contestId"] not in problem_id
+            ):
                 prob_cnt += 1
-                db.add_problem(problem['contestId'], problem['index'], problem['name'], problem['type'], problem['rating'])
-        await logging_channel.send(f"Problemset Updated, added {con_cnt} new contests and {prob_cnt} new problems")
+                db.add_problem(
+                    problem["contestId"],
+                    problem["index"],
+                    problem["name"],
+                    problem["type"],
+                    problem["rating"],
+                )
+        await logging_channel.send(
+            f"Problemset Updated, added {con_cnt} new contests and {prob_cnt} new problems"
+        )
     except Exception as e:
-        await logging_channel.send(f"Error while updating problemset: {str(traceback.format_exc())}")
+        await logging_channel.send(
+            f"Error while updating problemset: {str(traceback.format_exc())}"
+        )
 
 
 async def scrape_authors(client):
@@ -264,8 +396,6 @@ async def scrape_authors(client):
         scraper.run()
         await logging_channel.send("Done")
     except Exception as e:
-        await logging_channel.send(f"Error while scraping {str(traceback.format_exc())}")
-
-
-
-
+        await logging_channel.send(
+            f"Error while scraping {str(traceback.format_exc())}"
+        )

@@ -8,9 +8,14 @@ from dotenv import load_dotenv
 
 class DbConn:
     def __init__(self):
-        load_dotenv('.env')
-        self.conn = psycopg2.connect(database=os.environ.get("DB_NAME"), user=os.environ.get("DB_USERNAME"),
-                                     password=os.environ.get("DB_PASSWORD"), host="127.0.0.1", port="5432")
+        load_dotenv(".env")
+        self.conn = psycopg2.connect(
+            database=os.environ.get("DB_NAME"),
+            user=os.environ.get("DB_USERNAME"),
+            password=os.environ.get("DB_PASSWORD"),
+            host="database",
+            port="5432",
+        )
         self.make_tables()
 
     def make_tables(self):
@@ -349,7 +354,9 @@ class DbConn:
         curr.execute(query, (guild, id, id))
         data = curr.fetchone()
         curr.close()
-        Challenge = namedtuple('Challenge', 'guild p1_id p2_id rating time channel duration')
+        Challenge = namedtuple(
+            "Challenge", "guild p1_id p2_id rating time channel duration"
+        )
         return Challenge(data[0], data[1], data[2], data[3], data[4], data[5], data[6])
 
     # id = contest_id/index
@@ -366,10 +373,10 @@ class DbConn:
                         WHERE
                         id = %s AND index = %s
                     """
-            curr.execute(query, (id.split('/')[0], id.split('/')[1]))
+            curr.execute(query, (id.split("/")[0], id.split("/")[1]))
 
         res = curr.fetchall()
-        Problem = namedtuple('Problem', 'id index name type rating')
+        Problem = namedtuple("Problem", "id index name type rating")
         curr.close()
         data = []
         for x in res:
@@ -398,9 +405,20 @@ class DbConn:
                     (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
         curr = self.conn.cursor()
-        curr.execute(query, (challenge_info.guild, challenge_info.p1_id, challenge_info.p2_id, challenge_info.rating,
-                     time, challenge_info.channel, ' '.join([f"{x.id}/{x.index}" for x in problems]), "00000",
-                     challenge_info.duration))
+        curr.execute(
+            query,
+            (
+                challenge_info.guild,
+                challenge_info.p1_id,
+                challenge_info.p2_id,
+                challenge_info.rating,
+                time,
+                challenge_info.channel,
+                " ".join([f"{x.id}/{x.index}" for x in problems]),
+                "00000",
+                challenge_info.duration,
+            ),
+        )
         self.conn.commit()
         curr.close()
 
@@ -414,10 +432,24 @@ class DbConn:
         curr.execute(query)
         resp = curr.fetchall()
         curr.close()
-        Match = namedtuple('Match', 'guild p1_id p2_id rating time channel problems status duration')
+        Match = namedtuple(
+            "Match", "guild p1_id p2_id rating time channel problems status duration"
+        )
         match_info = []
         for data in resp:
-            match_info.append(Match(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8]))
+            match_info.append(
+                Match(
+                    data[0],
+                    data[1],
+                    data[2],
+                    data[3],
+                    data[4],
+                    data[5],
+                    data[6],
+                    data[7],
+                    data[8],
+                )
+            )
         return match_info
 
     def get_match_info(self, guild, id):
@@ -430,8 +462,20 @@ class DbConn:
         curr.execute(query, (guild, id, id))
         data = curr.fetchone()
         curr.close()
-        Match = namedtuple('Match', 'guild p1_id p2_id rating time channel problems status duration')
-        return Match(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8])
+        Match = namedtuple(
+            "Match", "guild p1_id p2_id rating time channel problems status duration"
+        )
+        return Match(
+            data[0],
+            data[1],
+            data[2],
+            data[3],
+            data[4],
+            data[5],
+            data[6],
+            data[7],
+            data[8],
+        )
 
     def delete_match(self, guild, id):
         query = """
@@ -464,8 +508,19 @@ class DbConn:
                     (%s, %s, %s, %s, %s, %s, %s, %s)
                 """
         curr = self.conn.cursor()
-        curr.execute(query, (match_info.guild, match_info.p1_id, match_info.p2_id, match_info.rating, int(time.time()),
-                             status, "0", int(time.time()) - match_info.time))
+        curr.execute(
+            query,
+            (
+                match_info.guild,
+                match_info.p1_id,
+                match_info.p2_id,
+                match_info.rating,
+                int(time.time()),
+                status,
+                "0",
+                int(time.time()) - match_info.time,
+            ),
+        )
         self.conn.commit()
         curr.close()
 
@@ -491,7 +546,9 @@ class DbConn:
         res = curr.fetchall()
         curr.close()
         data = []
-        Match = namedtuple('Match', 'guild p1_id p2_id rating time status result duration')
+        Match = namedtuple(
+            "Match", "guild p1_id p2_id rating time status result duration"
+        )
         for x in res:
             data.append(Match(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7]))
         return data
@@ -532,7 +589,7 @@ class DbConn:
                     idx DESC
                 """
         curr = self.conn.cursor()
-        curr.execute(query, (guild, ))
+        curr.execute(query, (guild,))
         resp = curr.fetchall()
         curr.close()
         done = []
@@ -563,17 +620,32 @@ class DbConn:
             return True
         return False
 
-    def add_to_ongoing_round(self, ctx, users, rating, points, problems, duration, repeat, alts, tournament=0):
+    def add_to_ongoing_round(
+        self, ctx, users, rating, points, problems, duration, repeat, alts, tournament=0
+    ):
         query = f"""
                     INSERT INTO ongoing_rounds
                     VALUES
                     (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
         curr = self.conn.cursor()
-        curr.execute(query, (ctx.guild.id, ' '.join([f"{x.id}" for x in users]), ' '.join(map(str, rating)),
-                             ' '.join(map(str, points)), int(time.time()), ctx.channel.id,
-                             ' '.join([f"{x.id}/{x.index}" for x in problems]), ' '.join('0' for i in range(len(users))),
-                             duration, repeat, ' '.join(['0'] * len(users)), tournament))
+        curr.execute(
+            query,
+            (
+                ctx.guild.id,
+                " ".join([f"{x.id}" for x in users]),
+                " ".join(map(str, rating)),
+                " ".join(map(str, points)),
+                int(time.time()),
+                ctx.channel.id,
+                " ".join([f"{x.id}/{x.index}" for x in problems]),
+                " ".join("0" for i in range(len(users))),
+                duration,
+                repeat,
+                " ".join(["0"] * len(users)),
+                tournament,
+            ),
+        )
         self.add_to_alt_table(ctx, users, alts)
         self.conn.commit()
         curr.close()
@@ -587,7 +659,14 @@ class DbConn:
                     (%s, %s, %s)
                 """
         curr = self.conn.cursor()
-        curr.execute(query, (ctx.guild.id, ' '.join([f"{x.id}" for x in users]), ' '.join(map(str, handles))))
+        curr.execute(
+            query,
+            (
+                ctx.guild.id,
+                " ".join([f"{x.id}" for x in users]),
+                " ".join(map(str, handles)),
+            ),
+        )
         self.conn.commit()
         curr.close()
 
@@ -616,8 +695,24 @@ class DbConn:
         curr.execute(query, (guild, f"%{users}%"))
         data = curr.fetchone()
         curr.close()
-        Round = namedtuple('Round', 'guild users rating points time channel problems status duration repeat times, tournament')
-        return Round(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11])
+        Round = namedtuple(
+            "Round",
+            "guild users rating points time channel problems status duration repeat times, tournament",
+        )
+        return Round(
+            data[0],
+            data[1],
+            data[2],
+            data[3],
+            data[4],
+            data[5],
+            data[6],
+            data[7],
+            data[8],
+            data[9],
+            data[10],
+            data[11],
+        )
 
     def get_all_rounds(self, guild=None):
         query = f"""
@@ -629,8 +724,27 @@ class DbConn:
         curr.execute(query)
         res = curr.fetchall()
         curr.close()
-        Round = namedtuple('Round', 'guild users rating points time channel problems status duration repeat times, tournament')
-        return [Round(data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11]) for data in res]
+        Round = namedtuple(
+            "Round",
+            "guild users rating points time channel problems status duration repeat times, tournament",
+        )
+        return [
+            Round(
+                data[0],
+                data[1],
+                data[2],
+                data[3],
+                data[4],
+                data[5],
+                data[6],
+                data[7],
+                data[8],
+                data[9],
+                data[10],
+                data[11],
+            )
+            for data in res
+        ]
 
     def update_round_status(self, guild, user, status, problems, timestamp):
         query = f"""
@@ -643,9 +757,16 @@ class DbConn:
                     guild = %s AND users LIKE %s 
                 """
         curr = self.conn.cursor()
-        curr.execute(query,
-                     (' '.join([str(x) for x in status]), ' '.join(problems), ' '.join([str(x) for x in timestamp]),
-                      guild, f"%{user}%"))
+        curr.execute(
+            query,
+            (
+                " ".join([str(x) for x in status]),
+                " ".join(problems),
+                " ".join([str(x) for x in timestamp]),
+                guild,
+                f"%{user}%",
+            ),
+        )
         self.conn.commit()
         curr.close()
 
@@ -675,9 +796,23 @@ class DbConn:
                     (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """
         curr = self.conn.cursor()
-        curr.execute(query, (round_info.guild, round_info.users, round_info.rating, round_info.points, round_info.time,
-                                round_info.channel, round_info.problems, round_info.status, round_info.duration, round_info.repeat,
-                                round_info.times, int(time.time())))
+        curr.execute(
+            query,
+            (
+                round_info.guild,
+                round_info.users,
+                round_info.rating,
+                round_info.points,
+                round_info.time,
+                round_info.channel,
+                round_info.problems,
+                round_info.status,
+                round_info.duration,
+                round_info.repeat,
+                round_info.times,
+                int(time.time()),
+            ),
+        )
         self.conn.commit()
         curr.close()
 
@@ -694,13 +829,31 @@ class DbConn:
                         ORDER BY end_time DESC
                     """
         curr = self.conn.cursor()
-        curr.execute(query, (guild, ) if user is None else (guild, f"%{user}%"))
+        curr.execute(query, (guild,) if user is None else (guild, f"%{user}%"))
         res = curr.fetchall()
         curr.close()
-        Round = namedtuple('Round', 'guild users rating points time channel problems status duration repeat times end_time')
+        Round = namedtuple(
+            "Round",
+            "guild users rating points time channel problems status duration repeat times end_time",
+        )
         data = []
         for x in res:
-            data.append(Round(x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11]))
+            data.append(
+                Round(
+                    x[0],
+                    x[1],
+                    x[2],
+                    x[3],
+                    x[4],
+                    x[5],
+                    x[6],
+                    x[7],
+                    x[8],
+                    x[9],
+                    x[10],
+                    x[11],
+                )
+            )
         return data
 
     def add_problem(self, id, index, name, type, rating):
@@ -753,12 +906,12 @@ class DbConn:
                     WHERE guild = %s
                 """
         curr = self.conn.cursor()
-        curr.execute(query, (guild, ))
+        curr.execute(query, (guild,))
         data = curr.fetchone()
         curr.close()
         if not data:
             return None
-        Tournament = namedtuple('Tournament', 'guild, name, type, id, url, status')
+        Tournament = namedtuple("Tournament", "guild, name, type, id, url, status")
         return Tournament(data[0], data[1], data[2], data[3], data[4], data[5])
 
     def add_tournament(self, guild, name, type, id, url, status):
@@ -814,10 +967,12 @@ class DbConn:
                     ORDER BY rating DESC
                 """
         curr = self.conn.cursor()
-        curr.execute(query, (guild, ))
+        curr.execute(query, (guild,))
         data = curr.fetchall()
         curr.close()
-        Registrant = namedtuple('Registrant', 'guild, discord_id, handle, rating, challonge_id')
+        Registrant = namedtuple(
+            "Registrant", "guild, discord_id, handle, rating, challonge_id"
+        )
         return [Registrant(x[0], x[1], x[2], x[3], x[4]) for x in data]
 
     def get_registrant_info(self, guild, challonge_id):
@@ -829,7 +984,9 @@ class DbConn:
         curr.execute(query, (guild, challonge_id))
         x = curr.fetchone()
         curr.close()
-        Registrant = namedtuple('Registrant', 'guild, discord_id, handle, rating, challonge_id')
+        Registrant = namedtuple(
+            "Registrant", "guild, discord_id, handle, rating, challonge_id"
+        )
         return Registrant(x[0], x[1], x[2], x[3], x[4])
 
     def update_tournament_params(self, id, url, status, guild):
@@ -878,14 +1035,14 @@ class DbConn:
                     WHERE guild = %s
                 """
         curr = self.conn.cursor()
-        curr.execute(query, (guild, ))
+        curr.execute(query, (guild,))
         self.conn.commit()
 
         query = f"""
                     DELETE FROM registrants
                     WHERE guild = %s
                 """
-        curr.execute(query, (guild, ))
+        curr.execute(query, (guild,))
         self.conn.commit()
         curr.close()
 
@@ -896,8 +1053,18 @@ class DbConn:
                     (%s, %s, %s, %s, %s, %s, %s)
                 """
         curr = self.conn.cursor()
-        curr.execute(query, (tournament_info.guild, tournament_info.name, tournament_info.type, tournament_info.id,
-                             tournament_info.url, winner, int(time.time())))
+        curr.execute(
+            query,
+            (
+                tournament_info.guild,
+                tournament_info.name,
+                tournament_info.type,
+                tournament_info.id,
+                tournament_info.url,
+                winner,
+                int(time.time()),
+            ),
+        )
         self.conn.commit()
         curr.close()
 
@@ -908,10 +1075,8 @@ class DbConn:
                     ORDER BY time DESC
                 """
         curr = self.conn.cursor()
-        curr.execute(query, (guild, ))
+        curr.execute(query, (guild,))
         data = curr.fetchall()
         curr.close()
         Tournament = namedtuple("Tournament", "guild name type id url winner time")
         return [Tournament(x[0], x[1], x[2], x[3], x[4], x[5], x[6]) for x in data]
-
-
