@@ -87,8 +87,8 @@ class Misc(commands.Cog):
             description="A discord bot to compete with others on codeforces in a Lockout format",
             color=discord.Color.magenta(),
         )
-        embed.set_author(name="Bot Stats", icon_url=self.client.user.avatar_url)
-        embed.set_thumbnail(url=self.client.user.avatar_url)
+        embed.set_author(name="Bot Stats", icon_url=self.client.user.display_avatar.url)
+        embed.set_thumbnail(url=self.client.user.display_avatar.url)
 
         embed.add_field(name="Handles Set", value=f"**{handles}**", inline=True)
         embed.add_field(name="Matches played", value=f"**{matches}**", inline=True)
