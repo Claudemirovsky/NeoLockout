@@ -4,13 +4,13 @@ services:
     restart: always
     container_name: postgresql
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=lockout
-    ports:
-      - 5432:5432
+      POSTGRES_USER: "${DB_USERNAME}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "${DB_NAME}"
+      POSTGRES_HOST_AUTH_METHOD: scram-sha-256
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     volumes:
-      - db:/var/lib/postgresql/data
+      - neolockout-db:/var/lib/postgresql/data
     networks:
       - lockout
 
@@ -19,12 +19,12 @@ services:
     restart: always
     container_name: pgadmin
     environment:
-      - PGADMIN_DEFAULT_EMAIL=postgres@local.com
-      - PGADMIN_DEFAULT_PASSWORD=postgres
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_EMAIL}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_PASSWORD}
     depends_on:
       - db
     ports:
-      - "5050:80"
+      - "127.0.0.1:5050:80"
     networks:
       - lockout
 
@@ -44,5 +44,5 @@ networks:
     driver: bridge
 
 volumes:
-  db:
+  neolockout-db:
     driver: local
