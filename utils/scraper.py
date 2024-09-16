@@ -13,17 +13,17 @@ def run():
         uClient.close()
         page_soup = soup(page_html, "html.parser")
         container = page_soup.find("div", {"class": "contests-table"})
-        items = container.findAll('tr')
+        items = container.findAll("tr")
         for i in items[1:]:
-            td_content = i.findAll('td')
-            contest_id = td_content[0].find('a')['href'].split('/')[-1]
-            a_tags = td_content[1].findAll('a')
+            td_content = i.findAll("td")
+            contest_id = td_content[0].find("a")["href"].split("/")[-1]
+            a_tags = td_content[1].findAll("a")
             authors = []
             for x in a_tags:
-                authors.append(x['href'].split('/')[-1])
-            if 'vovuh' in authors:
-                authors.append('pikmike')
-            dict[contest_id]=authors
+                authors.append(x["href"].split("/")[-1])
+            if "vovuh" in authors:
+                authors.append("pikmike")
+            dict[contest_id] = authors
 
-    with open('./data/authors.json', 'w') as json_file:
+    with open("./data/authors.json", "w") as json_file:
         json.dump(dict, json_file)

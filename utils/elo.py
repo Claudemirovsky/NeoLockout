@@ -82,4 +82,3 @@ def calculateChanges(ranklist):
     for player in ranklist:
         res[player[0].id] = [ELO.getELO(player[0].id), ELO.getELOChange(player[0].id)]
     return res
-

@@ -13,8 +13,20 @@ authors = None
 
 def isNonStandard(id):
     names = [
-        'wild', 'fools', 'unrated', 'surprise', 'unknown', 'friday', 'q#', 'testing',
-        'marathon', 'kotlin', 'onsite', 'experimental', 'abbyy']
+        "wild",
+        "fools",
+        "unrated",
+        "surprise",
+        "unknown",
+        "friday",
+        "q#",
+        "testing",
+        "marathon",
+        "kotlin",
+        "onsite",
+        "experimental",
+        "abbyy",
+    ]
     contest_name = db.get_contest_name(id)
     for x in names:
         if x in contest_name.lower():
@@ -32,7 +44,7 @@ def isAuthor(handles, problem):
 
 
 def filter_problems(all_problems, user_problems, handles):
-    with open('./data/authors.json') as f:
+    with open("./data/authors.json") as f:
         global authors
         authors = json.load(f)
     unsolved = []
@@ -46,7 +58,7 @@ def filter_problems(all_problems, user_problems, handles):
         found = False
         l, r = 0, len(names) - 1
         while l <= r:
-            mid = int((l+r)/2)
+            mid = int((l + r) / 2)
             if names[mid] > problem.name:
                 r = mid - 1
             elif names[mid] < problem.name:
@@ -92,8 +104,8 @@ def get_solve_time(sub, id, index):
     best = 1e18
     for x in sub:
         if x.id == int(id) and x.index == index:
-            if x.verdict == 'OK':
+            if x.verdict == "OK":
                 best = min(best, x.sub_time)
-            if x.verdict is None or x.verdict == 'TESTING':
+            if x.verdict is None or x.verdict == "TESTING":
                 return -1
     return best
